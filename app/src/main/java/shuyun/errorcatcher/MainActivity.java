@@ -1,12 +1,10 @@
 package shuyun.errorcatcher;
 
-import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,19 +19,6 @@ public class MainActivity extends AppCompatActivity {
         CatcherHandler.getInstance(getApplicationContext())
                 .setActivities(app.getListOfActivities())
                 .setErrorActivity(ErrorPagerActivity.class)
-                .setActionBeforeFinishActivities(new CatcherHandler.Action() {
-                    @Override
-                    public void action() {
-                        new Thread(){
-                            @Override
-                            public void run() {
-                                Looper.prepare();
-                                Toast.makeText(getApplicationContext(), "action before finish", Toast.LENGTH_SHORT).show();
-                                Looper.loop();
-                            }
-                        }.start();
-                    }
-                })
                 .setDelayTime(1200)
                 .build();
 

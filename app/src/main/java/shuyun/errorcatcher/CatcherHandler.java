@@ -25,7 +25,7 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
     }
 
     interface Action{
-        void action();
+        void action(Throwable e);
     }
 
     public CatcherHandler(Context context) {
@@ -80,7 +80,7 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
             handler.uncaughtException(t, e);
         }else{
             if(null != action)
-                action.action();
+                action.action(e);
             try {
                 Thread.sleep(delayTime);
             } catch (InterruptedException e1) {
