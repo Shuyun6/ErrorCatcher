@@ -1,6 +1,8 @@
 package shuyun.errorcatcher;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
@@ -17,7 +19,10 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
     private static CatcherHandler catcherHandler;
     private Context context;
     private Action action;
-    private int delayTime = 1000;
+    private int delayTimeBeforeFinish = 1000;
+    private boolean isRestartApp;
+    private Class restartActivityClass;
+    private int delayTimeOfRestart = 1000;
 
     public CatcherHandler setActionBeforeFinishActivities(Action action){
         this.action = action;
@@ -65,8 +70,22 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
      * @param millistime default 1000ms
      * @return
      */
-    public CatcherHandler setDelayTime(int millistime) {
-        this.delayTime = millistime;
+    public CatcherHandler setDelayTimeBeforeFinish(int millistime) {
+        this.delayTimeBeforeFinish = millistime;
+        return this;
+    }
+
+    /**
+     * restart app after finishing current activity
+     * @param millistime delay time between finish and restart
+     * @param activityClass the activity that need to be started
+     * @param isRestart
+     * @return
+     */
+    public CatcherHandler setRestart(int millistime, Class activityClass, boolean isRestart) {
+        this.delayTimeOfRestart = millistime;
+        this.restartActivityClass = activityClass;
+        this.isRestartApp = isRestart;
         return this;
     }
 
@@ -82,7 +101,7 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
             if(null != action)
                 action.action(e);
             try {
-                Thread.sleep(delayTime);
+                Thread.sleep(delayTimeBeforeFinish);
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
@@ -91,6 +110,8 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
                     if (null != activity)
                         activity.finish();
             android.os.Process.killProcess(android.os.Process.myPid());
+            if(isRestartApp)
+                restartApp(context, restartActivityClass);
         }
     }
 
@@ -103,6 +124,17 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
             context.startActivity(intent);
         }
         return true;
+    }
+
+    private void restartApp(Context context, Class activityClass) {
+        if(null == activityClass)
+            return;
+        Intent intent = new Intent(context, activityClass);
+        PendingIntent restartIntent = PendingIntent.getActivity(
+                context, 0, intent, PendingIntent.FLAG_ONE_SHOT);
+        AlarmManager am = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        am.set(AlarmManager.RTC, System.currentTimeMillis() + delayTimeOfRestart,
+                    restartIntent);
     }
 
 }
