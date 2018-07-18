@@ -1,23 +1,26 @@
 package shuyun.errorcatcher;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import java.util.ArrayList;
 
 /**
- * Created by Shuyun on 2017/9/1 0001.
- */
+ * Catch global errors or exceptions
+ * @author shuyun
+ * create at 2017/9/1 0018 17:29
+ * change at 2018/7/18 0018 17:29
+*/
 public class CatcherHandler implements Thread.UncaughtExceptionHandler {
+
+    @SuppressLint("StaticFieldLeak")
+    private static CatcherHandler catcherHandler;
 
     private Thread.UncaughtExceptionHandler handler;
     private ArrayList<Activity> listOfActivities;
     private Class errorActivityClass;
-    private static CatcherHandler catcherHandler;
     private Context context;
     private Action action;
     private int delayTimeBeforeFinish = 1000;
@@ -28,7 +31,7 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
     }
 
     interface Action{
-        void action(Throwable e);
+        void execute(Throwable e);
     }
 
     public CatcherHandler(Context context) {
@@ -37,18 +40,22 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
     }
 
     public static CatcherHandler getInstance(Context context){
-        if(null == catcherHandler)
+        if(null == catcherHandler) {
             catcherHandler = new CatcherHandler(context);
+        }
         return catcherHandler;
     }
 
     /**
-     * set Activties that alive to finish them after error being catching
-     * @param list
+     * add Activty that alive to finish them after error being catching
+     * @param activiy
      * @return
      */
-    public CatcherHandler setActivities(ArrayList<Activity> list) {
-        this.listOfActivities = list;
+    public CatcherHandler addActivity(Activity activiy) {
+        if (null == listOfActivities) {
+            listOfActivities = new ArrayList<>();
+        }
+        listOfActivities.add(activiy);
         return this;
     }
 
@@ -82,24 +89,29 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
         if (!process(e) && handler != null) {
             handler.uncaughtException(t, e);
         }else{
-            if(null != action)
-                action.action(e);
+            if(null != action) {
+                action.execute(e);
+            }
             try {
                 Thread.sleep(delayTimeBeforeFinish);
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
-            if (null != listOfActivities)
-                for (Activity activity : listOfActivities)
-                    if (null != activity)
+            if (null != listOfActivities) {
+                for (Activity activity : listOfActivities) {
+                    if (null != activity) {
                         activity.finish();
+                    }
+                }
+            }
             android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
 
     private boolean process(Throwable throwable) {
-        if(null == throwable)
+        if(null == throwable) {
             return false;
+        }
         if(null != errorActivityClass){
             Intent intent = new Intent(context, errorActivityClass);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

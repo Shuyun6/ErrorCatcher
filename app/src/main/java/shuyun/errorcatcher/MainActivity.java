@@ -17,13 +17,13 @@ public class MainActivity extends AppCompatActivity {
 
         //start catching
         CatcherHandler.getInstance(getApplicationContext())
-                .setActivities(app.getListOfActivities())
+                .addActivity(this)
                 .setErrorActivity(ErrorPagerActivity.class)
-                .setDelayTime(1200)
+                .setDelayTimeBeforeFinish(1200)
                 .build();
 
-        Button bt_senderror = (Button) findViewById(R.id.bt_senderror);
-        bt_senderror.setOnClickListener(new View.OnClickListener() {
+        Button btSenderror = (Button) findViewById(R.id.bt_senderror);
+        btSenderror.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //throw a null point exception without catching
