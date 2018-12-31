@@ -15,33 +15,37 @@ import java.util.ArrayList;
 */
 public class CatcherHandler implements Thread.UncaughtExceptionHandler {
 
-    @SuppressLint("StaticFieldLeak")
     private static CatcherHandler catcherHandler;
 
     private Thread.UncaughtExceptionHandler handler;
     private ArrayList<Activity> listOfActivities;
     private Class errorActivityClass;
     private Context context;
-    private Action action;
-    private int delayTimeBeforeFinish = 1000;
+    private ActionCallback callback;
+    private int delayTimeBeforeFinish = 300;
 
-    public CatcherHandler setActionBeforeFinishActivities(Action action){
-        this.action = action;
+    /**
+     * Action what happens before closing all activities
+     * @param action
+     * @return
+     */
+    public CatcherHandler before(ActionCallback action){
+        this.callback = action;
         return this;
     }
 
-    interface Action{
-        void execute(Throwable e);
-    }
-
-    public CatcherHandler(Context context) {
+    private CatcherHandler(Context context) {
         this.context = context;
         this.handler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
     public static CatcherHandler getInstance(Context context){
         if(null == catcherHandler) {
-            catcherHandler = new CatcherHandler(context);
+            synchronized (CatcherHandler.class) {
+                if (null == catcherHandler) {
+                    catcherHandler = new CatcherHandler(context);
+                }
+            }
         }
         return catcherHandler;
     }
@@ -72,7 +76,7 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
 
     /**
      * set delay time that between error catching and activities finishing
-     * @param millistime default 1000ms
+     * @param millistime default 300ms
      * @return
      */
     public CatcherHandler setDelayTimeBeforeFinish(int millistime) {
@@ -89,8 +93,8 @@ public class CatcherHandler implements Thread.UncaughtExceptionHandler {
         if (!process(e) && handler != null) {
             handler.uncaughtException(t, e);
         }else{
-            if(null != action) {
-                action.execute(e);
+            if(null != callback) {
+                callback.execute(e);
             }
             try {
                 Thread.sleep(delayTimeBeforeFinish);
